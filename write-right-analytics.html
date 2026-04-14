@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WriteRight — Analytics Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+
+:root {
+  --bg: #0c0e12;
+  --bg-card: #14171e;
+  --bg-card-hover: #191d27;
+  --bg-surface: #1c2030;
+  --border: #252a38;
+  --border-subtle: #1e2233;
+  --text-primary: #e8eaf0;
+  --text-secondary: #8b90a0;
+  --text-muted: #5c6070;
+  --accent: #56e0a0;
+  --accent-dim: rgba(86,224,160,0.12);
+  --accent-glow: rgba(86,224,160,0.25);
+  --orange: #f0944d;
+  --orange-dim: rgba(240,148,77,0.12);
+  --red: #ef6b6b;
+  --red-dim: rgba(239,107,107,0.12);
+  --blue: #5ea8ef;
+  --blue-dim: rgba(94,168,239,0.12);
+  --violet: #a78bfa;
+  --violet-dim: rgba(167,139,250,0.12);
+  --yellow: #f5b731;
+  --yellow-dim: rgba(245,183,49,0.14);
+  --donut-border: #14171e;
+  --tooltip-bg: #1c2030;
+  --tooltip-title: #e8eaf0;
+  --tooltip-body: #8b90a0;
+  --tooltip-border: #252a38;
+  --font-display: 'Instrument Serif', Georgia, serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+  --radius: 14px;
+  --radius-sm: 8px;
+}
+
+[data-theme="light"] {
+  --bg: #f5f4f0;
+  --bg-card: #ffffff;
+  --bg-card-hover: #fafaf8;
+  --bg-surface: #eeeee9;
+  --border: #ddd9d1;
+  --border-subtle: #e8e5dd;
+  --text-primary: #1a1a1a;
+  --text-secondary: #5a5a56;
+  --text-muted: #8a8a82;
+  --accent: #12a85e;
+  --accent-dim: rgba(18,168,94,0.10);
+  --accent-glow: rgba(18,168,94,0.18);
+  --orange: #e07828;
+  --orange-dim: rgba(224,120,40,0.10);
+  --red: #dc3c3c;
+  --red-dim: rgba(220,60,60,0.10);
+  --blue: #2b7de9;
+  --blue-dim: rgba(43,125,233,0.10);
+  --violet: #7c3aed;
+  --violet-dim: rgba(124,58,237,0.10);
+  --yellow: #e9a009;
+  --yellow-dim: rgba(233,160,9,0.12);
+  --donut-border: #ffffff;
+  --tooltip-bg: #ffffff;
+  --tooltip-title: #1a1a1a;
+  --tooltip-body: #5a5a56;
+  --tooltip-border: #ddd9d1;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* --- NOISE TEXTURE OVERLAY --- */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 200px;
+}
+
+[data-theme="light"] body::before {
+  opacity: 0.035;
+}
+[data-theme="light"] .suggestion-text-block {
+  background: rgba(18,168,94,0.06);
+}
+[data-theme="light"] .highlight-card {
+  background: linear-gradient(135deg, var(--accent-dim), rgba(18,168,94,0.04));
+  border-color: rgba(18,168,94,0.25);
+}
+[data-theme="light"] .rank-num.gold { background: rgba(233,160,9,0.14); }
+[data-theme="light"] .rank-num.silver { background: rgba(120,120,130,0.10); color: #6a6a6e; }
+[data-theme="light"] .rank-num.bronze { background: rgba(224,120,40,0.10); }
+
+.container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* ===========================
+   THEME SWITCHER
+   =========================== */
+.theme-toggle {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 10000;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s, border-color 0.3s, color 0.3s, transform 0.2s;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.theme-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: scale(1.08);
+}
+.theme-toggle svg {
+  width: 20px;
+  height: 20px;
+  transition: opacity 0.3s, transform 0.4s;
+}
+.theme-toggle .icon-sun { display: none; }
+.theme-toggle .icon-moon { display: block; }
+[data-theme="light"] .theme-toggle .icon-sun { display: block; }
+[data-theme="light"] .theme-toggle .icon-moon { display: none; }
+
+/* --- STAGGERED FADE IN --- */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes countUp {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes slideRight {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.animate {
+  opacity: 0;
+  animation: fadeUp 0.7s cubic-bezier(0.22,1,0.36,1) forwards;
+}
+.delay-1 { animation-delay: 0.08s; }
+.delay-2 { animation-delay: 0.16s; }
+.delay-3 { animation-delay: 0.24s; }
+.delay-4 { animation-delay: 0.32s; }
+.delay-5 { animation-delay: 0.40s; }
+.delay-6 { animation-delay: 0.48s; }
+.delay-7 { animation-delay: 0.56s; }
+.delay-8 { animation-delay: 0.64s; }
+
+/* ===========================
+   HERO
+   =========================== */
+.hero {
+  padding: 5rem 0 3rem;
+  position: relative;
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  top: -120px;
+  right: -200px;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+  pointer-events: none;
+  opacity: 0.4;
+}
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 100px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+}
+.hero-badge::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 2s ease infinite;
+}
+.hero h1 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.6rem, 5vw, 4rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.75rem;
+  color: var(--text-primary);
+}
+.hero h1 em {
+  color: var(--accent);
+  font-style: italic;
+}
+.hero-sub {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  max-width: 520px;
+  margin-bottom: 0.5rem;
+}
+.hero-date {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ===========================
+   KPI STRIP
+   =========================== */
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 4rem;
+}
+.kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.75rem 1.5rem;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s, transform 0.3s;
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+}
+.kpi-card:nth-child(1)::before { background: var(--accent); }
+.kpi-card:nth-child(2)::before { background: var(--blue); }
+.kpi-card:nth-child(3)::before { background: var(--orange); }
+.kpi-card:nth-child(4)::before { background: var(--violet); }
+.kpi-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+.kpi-value {
+  font-family: var(--font-display);
+  font-size: 2.8rem;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.kpi-card:nth-child(1) .kpi-value { color: var(--accent); }
+.kpi-card:nth-child(2) .kpi-value { color: var(--blue); }
+.kpi-card:nth-child(3) .kpi-value { color: var(--orange); }
+.kpi-card:nth-child(4) .kpi-value { color: var(--violet); }
+.kpi-sub {
+  margin-top: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+/* ===========================
+   SECTION STRUCTURE
+   =========================== */
+section {
+  margin-bottom: 4rem;
+}
+.section-header {
+  margin-bottom: 2rem;
+}
+.section-num {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  font-style: italic;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+.section-desc {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-top: 0.35rem;
+  max-width: 560px;
+}
+
+/* ===========================
+   CARD / PANEL
+   =========================== */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem;
+}
+.card-title {
+  font-weight: 600;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 1.25rem;
+}
+
+/* ===========================
+   GRID LAYOUTS
+   =========================== */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+  align-items: stretch;
+}
+.grid-2-1 {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+}
+.grid-1-2 {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 1rem;
+}
+
+/* ===========================
+   CHART WRAPPERS
+   =========================== */
+.chart-wrap {
+  position: relative;
+  width: 100%;
+}
+.chart-wrap canvas {
+  width: 100% !important;
+}
+
+/* ===========================
+   EXTERNAL TOOLTIP
+   =========================== */
+.wr-tooltip {
+  position: absolute;
+  background: var(--tooltip-bg);
+  border: 1px solid var(--tooltip-border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease, left 0.12s ease, top 0.12s ease;
+  transform: translate(-50%, -110%);
+  z-index: 100;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+
+/* ===========================
+   DONUT CENTER LABEL
+   =========================== */
+.donut-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.donut-center {
+  position: absolute;
+  text-align: center;
+  pointer-events: none;
+}
+.donut-center .big {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  line-height: 1;
+  color: var(--text-primary);
+}
+.donut-center .small {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 4px;
+}
+
+/* ===========================
+   BIG STAT INLINE
+   =========================== */
+.big-stat {
+  text-align: center;
+  padding: 2rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.big-stat .number {
+  font-family: var(--font-display);
+  font-size: 3.6rem;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+.big-stat .label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+.big-stat .sublabel {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+/* ===========================
+   TABLE
+   =========================== */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.data-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  padding: 0 0 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.data-table td {
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  vertical-align: middle;
+}
+.data-table tr:last-child td {
+  border-bottom: none;
+}
+.data-table .name {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+.rank-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  margin-right: 0.5rem;
+}
+.rank-num.gold { background: rgba(240,210,100,0.15); color: var(--yellow); }
+.rank-num.silver { background: rgba(200,200,210,0.12); color: #c8c8d2; }
+.rank-num.bronze { background: rgba(240,148,77,0.12); color: var(--orange); }
+.bar-inline {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--accent);
+  transition: width 0.8s cubic-bezier(0.22,1,0.36,1);
+}
+
+/* ===========================
+   QUOTE CARDS (feedback)
+   =========================== */
+.quote-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem 1.75rem;
+  position: relative;
+  transition: border-color 0.3s;
+}
+.quote-card:hover {
+  border-color: var(--border);
+  background: var(--bg-card-hover);
+}
+.quote-card .tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 0.9rem;
+}
+.tag-context { background: var(--orange-dim); color: var(--orange); }
+.tag-simplify { background: var(--red-dim); color: var(--red); }
+.tag-guideline { background: var(--blue-dim); color: var(--blue); }
+.tag-nocomment { background: var(--bg-surface); color: var(--text-muted); }
+.tag-upvote { background: var(--accent-dim); color: var(--accent); }
+.quote-card .comment {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  font-style: italic;
+  line-height: 1.55;
+  margin-bottom: 1rem;
+}
+.quote-card .meta-row {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+.quote-card .meta-item {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+.quote-card .meta-item strong {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.quote-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.original-text-block {
+  background: var(--bg-surface);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.85rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin-bottom: 0.75rem;
+  border-left: 2px solid var(--border);
+}
+.original-text-block .label-tiny {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 0.3rem;
+  font-weight: 600;
+}
+.suggestion-text-block {
+  background: rgba(86,224,160,0.04);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.85rem;
+  font-size: 0.8rem;
+  color: var(--accent);
+  line-height: 1.45;
+  margin-bottom: 0.75rem;
+  border-left: 2px solid var(--accent);
+  opacity: 0.85;
+}
+.suggestion-text-block .label-tiny {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 0.3rem;
+  font-weight: 600;
+}
+
+/* ===========================
+   VIOLATION FEEDBACK HIGHLIGHT
+   =========================== */
+.highlight-card {
+  background: linear-gradient(135deg, var(--accent-dim), rgba(86,224,160,0.04));
+  border: 1px solid rgba(86,224,160,0.2);
+  border-radius: var(--radius);
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+.highlight-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: var(--accent-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.highlight-icon svg {
+  width: 26px;
+  height: 26px;
+  color: var(--accent);
+}
+
+/* ===========================
+   DIVIDER
+   =========================== */
+.section-divider {
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  margin: 4rem 0;
+}
+
+/* ===========================
+   FOOTER
+   =========================== */
+footer {
+  text-align: center;
+  padding: 3rem 0 4rem;
+  border-top: 1px solid var(--border-subtle);
+}
+footer p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ===========================
+   RESPONSIVE
+   =========================== */
+@media (max-width: 900px) {
+  .kpi-strip { grid-template-columns: repeat(2, 1fr); }
+  .grid-2, .grid-2-1, .grid-1-2 { grid-template-columns: 1fr; }
+  .grid-3 { grid-template-columns: 1fr; }
+  .quote-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .kpi-strip { grid-template-columns: 1fr; }
+  .container { padding: 0 1rem; }
+  .hero h1 { font-size: 2rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ======================= THEME TOGGLE ======================= -->
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+  <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z"/></svg>
+  <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"/></svg>
+</button>
+
+<!-- ======================= HERO ======================= -->
+<header class="hero">
+  <div class="container">
+    <h1 class="animate delay-2">WriteRight <em>Analytics</em></h1>
+    <p class="hero-sub animate delay-3">AI-powered UX writing quality for Figma — adoption, usage, and feedback across the design organization.</p>
+    <p class="hero-date animate delay-4">Feb 26 – Apr 13, 2026 &nbsp;·&nbsp; 7 weeks of data</p>
+  </div>
+</header>
+
+<!-- ======================= KPI STRIP ======================= -->
+<div class="container">
+  <div class="kpi-strip">
+    <div class="kpi-card animate delay-3">
+      <div class="kpi-label">Active Users</div>
+      <div class="kpi-value">20</div>
+      <div class="kpi-sub">Unique designers on-boarded</div>
+    </div>
+    <div class="kpi-card animate delay-4">
+      <div class="kpi-label">Analysis Runs</div>
+      <div class="kpi-value">168</div>
+      <div class="kpi-sub">93% completed successfully</div>
+    </div>
+    <div class="kpi-card animate delay-5">
+      <div class="kpi-label">Violations Found</div>
+      <div class="kpi-value">234</div>
+      <div class="kpi-sub">Writing issues identified</div>
+    </div>
+    <div class="kpi-card animate delay-6">
+      <div class="kpi-label">Nodes Analyzed</div>
+      <div class="kpi-value">2,623</div>
+      <div class="kpi-sub">Text elements scanned</div>
+    </div>
+  </div>
+
+  <!-- ======================= §1 ADOPTION ======================= -->
+  <section class="animate delay-5">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <h2 class="section-title">Adoption Over Time</h2>
+      <p class="section-desc">Steady user growth and consistent weekly engagement since launch.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Cumulative Users</div>
+        <div class="chart-wrap"><canvas id="chartUsers"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Weekly Analysis Runs</div>
+        <div class="chart-wrap"><canvas id="chartWeekly"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= §2 QUALITY INSIGHTS ======================= -->
+  <section class="animate delay-3">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <h2 class="section-title">Quality Insights</h2>
+      <p class="section-desc">What kinds of writing issues the plugin catches most.</p>
+    </div>
+    <div class="grid-2-1">
+      <div class="card">
+        <div class="card-title">Top Violation Types</div>
+        <div class="chart-wrap"><canvas id="chartTypes"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Severity Breakdown</div>
+        <div class="donut-container">
+          <canvas id="chartSeverity" width="220" height="220"></canvas>
+          <div class="donut-center">
+            <div class="big">234</div>
+            <div class="small">Total</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= §3 SUGGESTION ACCEPTANCE ======================= -->
+  <section class="animate delay-3">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <h2 class="section-title">Suggestion Acceptance</h2>
+      <p class="section-desc">When a user clicks "Apply" on a suggestion, feedback is automatically captured. This shows strong trust in the plugin's recommendations.</p>
+    </div>
+    <div class="grid-3">
+      <div class="card big-stat">
+        <div class="number" style="color:var(--accent)">34</div>
+        <div class="label">Suggestions Auto-Accepted</div>
+        <div class="sublabel">out of 40 feedback entries</div>
+      </div>
+      <div class="card big-stat">
+        <div class="number" style="color:var(--blue)">85%</div>
+        <div class="label">Acceptance Rate</div>
+        <div class="sublabel">applied the suggestion</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Applied vs Not Applied</div>
+        <div class="donut-container">
+          <canvas id="chartApplied" width="200" height="200"></canvas>
+          <div class="donut-center">
+            <div class="big">40</div>
+            <div class="small">Feedback</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= §4 FEEDBACK & SATISFACTION ======================= -->
+  <section class="animate delay-3">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <h2 class="section-title">Suggestion Approval</h2>
+      <p class="section-desc">Explicit upvote/downvote ratings on the plugin's suggestions, showing overall quality sentiment across 40 feedback entries.</p>
+    </div>
+    <div class="grid-3">
+      <div class="card big-stat">
+        <div class="number" style="color:var(--accent)">33</div>
+        <div class="label">Upvotes</div>
+        <div class="sublabel">suggestions rated positively</div>
+      </div>
+      <div class="card big-stat">
+        <div class="number" style="color:var(--red)">7</div>
+        <div class="label">Downvotes</div>
+        <div class="sublabel">suggestions flagged for improvement</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Approval Breakdown</div>
+        <div class="donut-container">
+          <canvas id="chartRatings" width="220" height="220"></canvas>
+          <div class="donut-center">
+            <div class="big">82%</div>
+            <div class="small">Approval</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= §5 USER ENGAGEMENT ======================= -->
+  <section class="animate delay-3">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <h2 class="section-title">User Engagement</h2>
+      <p class="section-desc">Leaderboard of the most active plugin users by analysis runs.</p>
+    </div>
+    <div class="card">
+      <table class="data-table" id="leaderboard">
+        <thead>
+          <tr>
+            <th style="width:50px">#</th>
+            <th>Designer</th>
+            <th style="width:80px;text-align:right;padding-right:1.5rem">Runs</th>
+            <th style="width:50%">Activity</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- ======================= §6 SUGGESTION FEEDBACK – IMPROVEMENTS ======================= -->
+  <section class="animate delay-3">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <h2 class="section-title">Suggestion Feedback — Improvement Areas</h2>
+      <p class="section-desc">Downvoted suggestions with user comments, grouped by theme. These highlight where the plugin can improve its analysis.</p>
+    </div>
+
+    <!-- Context Misclassification -->
+    <h3 style="font-size:0.82rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--orange);margin-bottom:1rem;margin-top:0.5rem;">Context Misclassification</h3>
+    <div class="quote-grid" style="margin-bottom:1.75rem">
+      <div class="quote-card">
+        <div class="tag tag-context">Context</div>
+        <div class="comment">"It seems like it is treating the text as a button with button rule applied"</div>
+        <div class="original-text-block">
+          <div class="label-tiny">Original text</div>
+          You are about to scale this application to 100 VMs. This action executes immediately and cannot be reversed. Are you sure you want to proceed?
+        </div>
+        <div class="suggestion-text-block">
+          <div class="label-tiny">Plugin suggested</div>
+          Scale to 100 VMs
+        </div>
+        <div class="meta-row">
+          <div class="meta-item">Not applied</div>
+        </div>
+      </div>
+      <div class="quote-card">
+        <div class="tag tag-context">Context</div>
+        <div class="comment">"Not a button text.."</div>
+        <div class="original-text-block">
+          <div class="label-tiny">Original text</div>
+          The Dashboard now displays Nutanix-based STIG controls for clusters on AOS 7.6 or higher…
+        </div>
+        <div class="suggestion-text-block">
+          <div class="label-tiny">Plugin suggested</div>
+          Rescan STIG controls
+        </div>
+        <div class="meta-row">
+          <div class="meta-item">Not applied</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Suggestion Over-simplifies -->
+    <h3 style="font-size:0.82rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--red);margin-bottom:1rem;">Suggestion Over-Simplifies</h3>
+    <div class="quote-grid" style="margin-bottom:1.75rem">
+      <div class="quote-card">
+        <div class="tag tag-simplify">Oversimplified</div>
+        <div class="comment">"Gets rid of the essence"</div>
+        <div class="original-text-block">
+          <div class="label-tiny">Original text</div>
+          Includes the bucket ARN as a resource — required for actions like ListBucket, GetBucketLocation
+        </div>
+        <div class="suggestion-text-block">
+          <div class="label-tiny">Plugin suggested</div>
+          Add ARN for ListBucket, GetBucketLocation
+        </div>
+        <div class="meta-row">
+          <div class="meta-item">Not applied</div>
+        </div>
+      </div>
+      <div class="quote-card">
+        <div class="tag tag-simplify">Oversimplified</div>
+        <div class="comment">"Suggestions are not relevant to the confirm modal at all and it is suggesting generic contractions"</div>
+        <div class="original-text-block">
+          <div class="label-tiny">Original text</div>
+          Changing the Project will reset the Categories you've selected, are you sure?
+        </div>
+        <div class="suggestion-text-block">
+          <div class="label-tiny">Plugin suggested</div>
+          Reset categories
+        </div>
+        <div class="meta-row">
+          <div class="meta-item">Not applied</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Guideline Interpretation -->
+    <h3 style="font-size:0.82rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--blue);margin-bottom:1rem;">Guideline Interpretation</h3>
+    <div class="quote-grid" style="margin-bottom:1.75rem">
+      <div class="quote-card">
+        <div class="tag tag-guideline">Guideline</div>
+        <div class="comment">"Based on this guideline, it seems like 'you're' is ok to use: Use contractions like you'll and we'll. Avoid negative contractions like can't and don't…"</div>
+        <div class="original-text-block">
+          <div class="label-tiny">Original text</div>
+          If you're having trouble, view reasons your code might be invalid.
+        </div>
+        <div class="suggestion-text-block">
+          <div class="label-tiny">Plugin suggested</div>
+          If you are having trouble, view why your code may be invalid.
+        </div>
+        <div class="meta-row">
+          <div class="meta-item">Not applied</div>
+        </div>
+      </div>
+      <div class="quote-card">
+        <div class="tag tag-guideline">Guideline</div>
+        <div class="comment">"Entity Name should not be in quotes for menu option"</div>
+        <div class="original-text-block">
+          <div class="label-tiny">Original text</div>
+          nc-35ae50-default-0
+        </div>
+        <div class="suggestion-text-block">
+          <div class="label-tiny">Plugin suggested</div>
+          'nc-35ae50-default-0'
+        </div>
+        <div class="meta-row">
+          <div class="meta-item">Not applied</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- No Comment -->
+    <h3 style="font-size:0.82rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:1rem;">No Comment Provided</h3>
+    <div class="quote-grid" style="margin-bottom:0.5rem">
+      <div class="quote-card" style="opacity:0.7">
+        <div class="tag tag-nocomment">No Comment</div>
+        <div class="original-text-block">
+          <div class="label-tiny">Original text</div>
+          Feature Usage
+        </div>
+        <div class="suggestion-text-block">
+          <div class="label-tiny">Plugin suggested</div>
+          Feature usage
+        </div>
+        <div class="meta-row">
+          <div class="meta-item">Applied despite downvote</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- ======================= §7 VIOLATION FEEDBACK ======================= -->
+  <section class="animate delay-3">
+    <div class="section-header">
+      <span class="section-num">07</span>
+      <h2 class="section-title">Violation Feedback</h2>
+      <p class="section-desc">Direct feedback on the violations the plugin detected, separate from suggestion-level feedback.</p>
+    </div>
+    <div class="highlight-card">
+      <div class="highlight-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V3a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H14.23c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23H5.904m.729-4.106V5.106a2.25 2.25 0 0 0-2.25-2.25H3.75A.75.75 0 0 0 3 3.606v10.5a.75.75 0 0 0 .75.75h.604a2.25 2.25 0 0 1 2.029 1.279l.554 1.11a.75.75 0 0 0 .671.418h.158a.75.75 0 0 0 .75-.75V16.5a5.25 5.25 0 0 0-1.023-3.125Z"/></svg>
+      </div>
+      <div>
+        <div style="font-weight:600;margin-bottom:0.3rem;color:var(--accent)">1 Upvote Received</div>
+        <div style="font-size:0.9rem;color:var(--text-secondary);margin-bottom:0.5rem"><strong style="color:var(--text-primary)">Aravind R</strong> upvoted a violation on the text <em>"Migration_Plan_20"</em></div>
+        <div style="font-size:0.78rem;color:var(--text-muted)">This confirms that violation detection itself is valued by the team — users appreciate when the plugin flags real writing issues.</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <div class="container">
+    <p>WriteRight Analytics &nbsp;·&nbsp; Data exported Apr 13, 2026 &nbsp;·&nbsp; Nutanix Global Design</p>
+  </div>
+</footer>
+
+<script>
+function getThemeColors() {
+  const s = getComputedStyle(document.documentElement);
+  const v = name => s.getPropertyValue(name).trim();
+  return {
+    accent: v('--accent'),
+    accentDim: v('--accent-dim'),
+    blue: v('--blue'),
+    blueDim: v('--blue-dim'),
+    orange: v('--orange'),
+    violet: v('--violet'),
+    violetDim: v('--violet-dim'),
+    yellow: v('--yellow'),
+    red: v('--red'),
+    textSecondary: v('--text-secondary'),
+    textMuted: v('--text-muted'),
+    donutBorder: v('--donut-border'),
+    tooltipBg: v('--tooltip-bg'),
+    tooltipTitle: v('--tooltip-title'),
+    tooltipBody: v('--tooltip-body'),
+    tooltipBorder: v('--tooltip-border'),
+    bgCard: v('--bg-card'),
+    grid: document.documentElement.dataset.theme === 'light'
+      ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.04)',
+    notApplied: document.documentElement.dataset.theme === 'light'
+      ? 'rgba(0,0,0,0.07)' : 'rgba(255,255,255,0.08)',
+  };
+}
+
+function getOrCreateTooltip(chart) {
+  const parent = chart.canvas.closest('.donut-container') || chart.canvas.closest('.chart-wrap');
+  let el = parent.querySelector('.wr-tooltip');
+  if (!el) {
+    el = document.createElement('div');
+    el.classList.add('wr-tooltip');
+    const table = document.createElement('table');
+    table.style.margin = '0';
+    el.appendChild(table);
+    parent.appendChild(el);
+  }
+  return el;
+}
+
+const tooltipHideTimers = new WeakMap();
+
+function externalTooltipHandler(context) {
+  const { chart, tooltip } = context;
+  const el = getOrCreateTooltip(chart);
+
+  const existingTimer = tooltipHideTimers.get(el);
+
+  if (tooltip.opacity === 0) {
+    if (!existingTimer) {
+      tooltipHideTimers.set(el, setTimeout(() => {
+        el.style.opacity = '0';
+        tooltipHideTimers.delete(el);
+      }, 100));
+    }
+    return;
+  }
+
+  if (existingTimer) {
+    clearTimeout(existingTimer);
+    tooltipHideTimers.delete(el);
+  }
+
+  if (tooltip.body) {
+    const titleLines = tooltip.title || [];
+    const bodyLines = tooltip.body.map(b => b.lines);
+
+    const tableRoot = el.querySelector('table');
+    while (tableRoot.firstChild) tableRoot.firstChild.remove();
+
+    titleLines.forEach(t => {
+      const tr = document.createElement('tr');
+      const th = document.createElement('th');
+      th.style.cssText = 'text-align:left;font-size:0.78rem;font-weight:600;color:var(--tooltip-title);padding-bottom:4px;';
+      th.textContent = t;
+      tr.appendChild(th);
+      tableRoot.appendChild(tr);
+    });
+
+    bodyLines.forEach((lines, i) => {
+      const color = tooltip.labelColors[i];
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      const swatch = document.createElement('span');
+      swatch.style.cssText = `display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:${color.backgroundColor};vertical-align:middle;`;
+      td.style.cssText = 'font-size:0.8rem;color:var(--tooltip-body);white-space:nowrap;';
+      td.appendChild(swatch);
+      td.appendChild(document.createTextNode(lines[0]));
+      tr.appendChild(td);
+      tableRoot.appendChild(tr);
+    });
+  }
+
+  const { offsetLeft, offsetTop } = chart.canvas;
+  el.style.opacity = '1';
+  el.style.pointerEvents = 'none';
+  el.style.left = offsetLeft + tooltip.caretX + 'px';
+  el.style.top = offsetTop + tooltip.caretY + 'px';
+}
+
+function ttip(C) {
+  return {
+    enabled: false,
+    external: externalTooltipHandler,
+    position: 'nearest',
+  };
+}
+
+
+const chartInstances = {};
+
+function buildCharts() {
+  Object.values(chartInstances).forEach(c => c.destroy());
+  document.querySelectorAll('.wr-tooltip').forEach(el => el.remove());
+  const C = getThemeColors();
+
+  Chart.defaults.color = C.textSecondary;
+  Chart.defaults.borderColor = C.grid;
+  Chart.defaults.font.family = "'DM Sans', system-ui, sans-serif";
+  Chart.defaults.font.size = 12;
+  Chart.defaults.plugins.legend.display = false;
+
+  // Collapse same-day joiners: unique dates, cumulative count at each date
+  const userJoinDates = [
+    ['Feb 26', 1], ['Mar 2', 2], ['Mar 3', 3], ['Mar 5', 4],
+    ['Mar 10', 7], ['Mar 11', 9], ['Mar 12', 10], ['Mar 17', 11],
+    ['Mar 19', 12], ['Mar 24', 13], ['Mar 30', 14], ['Apr 1', 17],
+    ['Apr 7', 18], ['Apr 9', 20],
+  ];
+
+  chartInstances.users = new Chart(document.getElementById('chartUsers'), {
+    type: 'line',
+    data: {
+      labels: userJoinDates.map(d => d[0]),
+      datasets: [{
+        data: userJoinDates.map(d => d[1]),
+        borderColor: C.accent,
+        backgroundColor: C.accentDim,
+        fill: true,
+        tension: 0.35,
+        pointRadius: 3,
+        pointBackgroundColor: C.accent,
+        pointBorderColor: C.bgCard,
+        pointBorderWidth: 2,
+        pointHoverRadius: 6,
+        borderWidth: 2.5,
+      }]
+    },
+    options: {
+      responsive: true,
+      interaction: { intersect: false, mode: 'index' },
+      scales: {
+        x: { grid: { display: false }, ticks: { maxRotation: 45, font: { size: 10 }, maxTicksLimit: 8 } },
+        y: { beginAtZero: true, grid: { color: C.grid }, ticks: { stepSize: 5 } }
+      },
+      plugins: { tooltip: { ...ttip(C), callbacks: { label: ctx => ctx.parsed.y + ' users' } } }
+    }
+  });
+
+  chartInstances.weekly = new Chart(document.getElementById('chartWeekly'), {
+    type: 'bar',
+    data: {
+      labels: ['Feb 23','Mar 2','Mar 9','Mar 16','Mar 23','Mar 30','Apr 6','Apr 13'],
+      datasets: [{
+        data: [2, 18, 44, 25, 23, 33, 22, 1],
+        backgroundColor: [C.blueDim, C.blueDim, C.blue, C.blueDim, C.blueDim, C.blue, C.blueDim, C.blueDim],
+        borderColor: C.blue,
+        borderWidth: 1,
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+        y: { beginAtZero: true, grid: { color: C.grid } }
+      },
+      plugins: { tooltip: { ...ttip(C), callbacks: { label: ctx => ctx.parsed.y + ' runs' } } }
+    }
+  });
+
+  const typeColors = [C.accent, C.blue, C.orange, C.violet, C.yellow, C.red];
+  const typeFade = typeColors.map(c => c.replace(')', ',0.5)').replace('rgb(', 'rgba('));
+  chartInstances.types = new Chart(document.getElementById('chartTypes'), {
+    type: 'bar',
+    data: {
+      labels: ['Readability & Clarity','Capitalization','Punctuation','Voice Structure','Prohibited Words','Date & Time','Voice & Tone','Language','File & Entity','Number Formatting'],
+      datasets: [{
+        data: [112, 89, 59, 53, 24, 20, 12, 11, 2, 1],
+        backgroundColor: [...typeColors, ...typeFade.slice(0,4)],
+        borderRadius: 4,
+        borderSkipped: false,
+        barThickness: 18,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      scales: {
+        x: { beginAtZero: true, grid: { color: C.grid }, ticks: { font: { size: 10 } } },
+        y: { grid: { display: false }, ticks: { font: { size: 11 } } }
+      },
+      plugins: { tooltip: { ...ttip(C), callbacks: { label: ctx => ctx.parsed.x + ' violations' } } }
+    }
+  });
+
+  const centerLabelPlugin = {
+    id: 'centerLabel',
+    afterRender(chart) {
+      const container = chart.canvas.closest('.donut-container');
+      if (!container) return;
+      const label = container.querySelector('.donut-center');
+      if (!label) return;
+      const { top, bottom, left, right } = chart.chartArea;
+      const cx = (left + right) / 2;
+      const cy = (top + bottom) / 2;
+      label.style.position = 'absolute';
+      label.style.left = cx + 'px';
+      label.style.top = cy + 'px';
+      label.style.transform = 'translate(-50%, -50%)';
+    }
+  };
+
+  function donut(id, labels, data, colors, legendPos) {
+    return new Chart(document.getElementById(id), {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [{ data, backgroundColor: colors, borderColor: C.donutBorder, borderWidth: 3, hoverOffset: 6 }]
+      },
+      options: {
+        cutout: '68%',
+        responsive: true,
+        plugins: {
+          legend: { display: true, position: legendPos || 'bottom', labels: { padding: 16, usePointStyle: true, font: { size: 11 } } },
+          tooltip: ttip(C),
+        }
+      },
+      plugins: [centerLabelPlugin]
+    });
+  }
+
+  chartInstances.severity = donut('chartSeverity', ['Medium','Low','High'], [149,60,25], [C.yellow, C.accent, C.red]);
+  chartInstances.applied = donut('chartApplied', ['Applied','Not Applied'], [34,6], [C.accent, C.notApplied]);
+  chartInstances.ratings = donut('chartRatings', ['Upvote','Downvote'], [33,7], [C.accent, C.red]);
+
+}
+
+// ==============================
+// Leaderboard (static, uses CSS vars)
+// ==============================
+const leaderboardData = [
+  { name: 'Kunwei Jin', runs: 57 },
+  { name: 'Omkar Joshi', runs: 28 },
+  { name: 'Sarika Kandasamy', runs: 21 },
+  { name: 'Damla Tufekli', runs: 15 },
+  { name: 'Sanika Mokashi', runs: 8 },
+  { name: 'Sourabh Daroji', runs: 7 },
+  { name: 'Aryan Rathod', runs: 6 },
+  { name: 'Ritika Dhawan', runs: 5 },
+  { name: 'Aravind R', runs: 5 },
+  { name: 'Rishabh Jain', runs: 3 },
+  { name: 'Chinmay Anand', runs: 3 },
+  { name: 'Jerome Marshall', runs: 2 },
+  { name: 'Mansi Diwakar Salvi', runs: 1 },
+  { name: 'Sergej Spomer', runs: 1 },
+  { name: 'James Sarantos', runs: 1 },
+  { name: 'Mandar Sarnaik', runs: 1 },
+  { name: 'Monica Poddar', runs: 1 },
+  { name: 'Kushagra Khandelwal', runs: 1 },
+  { name: 'Ahmed Elgamal', runs: 1 },
+  { name: 'Arnab Ghose', runs: 1 },
+];
+
+const maxRuns = leaderboardData[0].runs;
+const tbody = document.querySelector('#leaderboard tbody');
+leaderboardData.forEach((u, i) => {
+  const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+  const pct = (u.runs / maxRuns * 100).toFixed(0);
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><span class="rank-num ${rankClass}">${i + 1}</span></td>
+    <td class="name">${u.name}</td>
+    <td style="text-align:right;padding-right:1.5rem;font-weight:600;color:var(--text-primary)">${u.runs}</td>
+    <td><div style="width:100%;background:var(--bg-surface);border-radius:3px;overflow:hidden"><div class="bar-inline" style="width:${pct}%"></div></div></td>
+  `;
+  tbody.appendChild(tr);
+});
+
+// ==============================
+// Theme toggle
+// ==============================
+const toggle = document.getElementById('themeToggle');
+const root = document.documentElement;
+
+function setTheme(theme) {
+  root.dataset.theme = theme;
+  localStorage.setItem('wr-dash-theme', theme);
+  buildCharts();
+}
+
+toggle.addEventListener('click', () => {
+  setTheme(root.dataset.theme === 'light' ? 'dark' : 'light');
+});
+
+const saved = localStorage.getItem('wr-dash-theme') || 'dark';
+setTheme(saved);
+
+// ==============================
+// Scroll-triggered animations
+// ==============================
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.style.animationPlayState = 'running';
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.08 });
+
+document.querySelectorAll('section.animate, .highlight-card').forEach(el => {
+  el.style.animationPlayState = 'paused';
+  observer.observe(el);
+});
+</script>
+
+</body>
+</html>
+
+
+
