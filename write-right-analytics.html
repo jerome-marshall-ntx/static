@@ -697,7 +697,7 @@ footer p {
   <div class="container">
     <h1 class="animate delay-2">WriteRight <em>Analytics</em></h1>
     <p class="hero-sub animate delay-3">AI-powered UX writing quality for Figma — adoption, usage, and feedback across the design organization.</p>
-    <p class="hero-date animate delay-4">Feb 26 – Apr 13, 2026 &nbsp;·&nbsp; 7 weeks of data</p>
+    <p class="hero-date animate delay-4">Feb 26 – Apr 20, 2026 &nbsp;·&nbsp; 8 weeks of data</p>
   </div>
 </header>
 
@@ -706,22 +706,22 @@ footer p {
   <div class="kpi-strip">
     <div class="kpi-card animate delay-3">
       <div class="kpi-label">Active Users</div>
-      <div class="kpi-value">20</div>
+      <div class="kpi-value">21</div>
       <div class="kpi-sub">Unique designers on-boarded</div>
     </div>
     <div class="kpi-card animate delay-4">
       <div class="kpi-label">Analysis Runs</div>
-      <div class="kpi-value">168</div>
-      <div class="kpi-sub">93% completed successfully</div>
+      <div class="kpi-value">189</div>
+      <div class="kpi-sub">94% completed successfully</div>
     </div>
     <div class="kpi-card animate delay-5">
       <div class="kpi-label">Violations Found</div>
-      <div class="kpi-value">234</div>
+      <div class="kpi-value">268</div>
       <div class="kpi-sub">Writing issues identified</div>
     </div>
     <div class="kpi-card animate delay-6">
       <div class="kpi-label">Nodes Analyzed</div>
-      <div class="kpi-value">2,623</div>
+      <div class="kpi-value">3,753</div>
       <div class="kpi-sub">Text elements scanned</div>
     </div>
   </div>
@@ -762,7 +762,7 @@ footer p {
         <div class="donut-container">
           <canvas id="chartSeverity" width="220" height="220"></canvas>
           <div class="donut-center">
-            <div class="big">234</div>
+            <div class="big">268</div>
             <div class="small">Total</div>
           </div>
         </div>
@@ -779,12 +779,12 @@ footer p {
     </div>
     <div class="grid-3">
       <div class="card big-stat">
-        <div class="number" style="color:var(--accent)">34</div>
+        <div class="number" style="color:var(--accent)">41</div>
         <div class="label">Suggestions Auto-Accepted</div>
-        <div class="sublabel">out of 40 feedback entries</div>
+        <div class="sublabel">out of 47 feedback entries</div>
       </div>
       <div class="card big-stat">
-        <div class="number" style="color:var(--blue)">85%</div>
+        <div class="number" style="color:var(--blue)">87%</div>
         <div class="label">Acceptance Rate</div>
         <div class="sublabel">applied the suggestion</div>
       </div>
@@ -793,7 +793,7 @@ footer p {
         <div class="donut-container">
           <canvas id="chartApplied" width="200" height="200"></canvas>
           <div class="donut-center">
-            <div class="big">40</div>
+            <div class="big">47</div>
             <div class="small">Feedback</div>
           </div>
         </div>
@@ -806,11 +806,11 @@ footer p {
     <div class="section-header">
       <span class="section-num">04</span>
       <h2 class="section-title">Suggestion Approval</h2>
-      <p class="section-desc">Explicit upvote/downvote ratings on the plugin's suggestions, showing overall quality sentiment across 40 feedback entries.</p>
+      <p class="section-desc">Explicit upvote/downvote ratings on the plugin's suggestions, showing overall quality sentiment across 47 feedback entries.</p>
     </div>
     <div class="grid-3">
       <div class="card big-stat">
-        <div class="number" style="color:var(--accent)">33</div>
+        <div class="number" style="color:var(--accent)">40</div>
         <div class="label">Upvotes</div>
         <div class="sublabel">suggestions rated positively</div>
       </div>
@@ -824,7 +824,7 @@ footer p {
         <div class="donut-container">
           <canvas id="chartRatings" width="220" height="220"></canvas>
           <div class="donut-center">
-            <div class="big">82%</div>
+            <div class="big">85%</div>
             <div class="small">Approval</div>
           </div>
         </div>
@@ -1014,7 +1014,7 @@ footer p {
 
 <footer>
   <div class="container">
-    <p>WriteRight Analytics &nbsp;·&nbsp; Data exported Apr 13, 2026 &nbsp;·&nbsp; Nutanix Global Design</p>
+    <p>WriteRight Analytics &nbsp;·&nbsp; Data exported Apr 22, 2026 &nbsp;·&nbsp; Nutanix Global Design</p>
   </div>
 </footer>
 
@@ -1148,7 +1148,7 @@ function buildCharts() {
     ['Feb 26', 1], ['Mar 2', 2], ['Mar 3', 3], ['Mar 5', 4],
     ['Mar 10', 7], ['Mar 11', 9], ['Mar 12', 10], ['Mar 17', 11],
     ['Mar 19', 12], ['Mar 24', 13], ['Mar 30', 14], ['Apr 1', 17],
-    ['Apr 7', 18], ['Apr 9', 20],
+    ['Apr 7', 18], ['Apr 9', 20], ['Apr 14', 21],
   ];
 
   chartInstances.users = new Chart(document.getElementById('chartUsers'), {
@@ -1183,10 +1183,10 @@ function buildCharts() {
   chartInstances.weekly = new Chart(document.getElementById('chartWeekly'), {
     type: 'bar',
     data: {
-      labels: ['Feb 23','Mar 2','Mar 9','Mar 16','Mar 23','Mar 30','Apr 6','Apr 13'],
+      labels: ['Feb 23','Mar 2','Mar 9','Mar 16','Mar 23','Mar 30','Apr 6','Apr 13','Apr 20'],
       datasets: [{
-        data: [2, 18, 44, 25, 23, 33, 22, 1],
-        backgroundColor: [C.blueDim, C.blueDim, C.blue, C.blueDim, C.blueDim, C.blue, C.blueDim, C.blueDim],
+        data: [2, 18, 44, 25, 23, 33, 22, 21, 1],
+        backgroundColor: [C.blueDim, C.blueDim, C.blue, C.blueDim, C.blueDim, C.blue, C.blueDim, C.blueDim, C.blueDim],
         borderColor: C.blue,
         borderWidth: 1,
         borderRadius: 6,
@@ -1208,9 +1208,9 @@ function buildCharts() {
   chartInstances.types = new Chart(document.getElementById('chartTypes'), {
     type: 'bar',
     data: {
-      labels: ['Readability & Clarity','Capitalization','Punctuation','Voice Structure','Prohibited Words','Date & Time','Voice & Tone','Language','File & Entity','Number Formatting'],
+      labels: ['Readability & Clarity','Capitalization','Punctuation','Voice Structure','Prohibited Words','Date & Time','Language','Voice & Tone','Number Formatting','File & Entity'],
       datasets: [{
-        data: [112, 89, 59, 53, 24, 20, 12, 11, 2, 1],
+        data: [125, 101, 73, 60, 27, 20, 15, 13, 2, 2],
         backgroundColor: [...typeColors, ...typeFade.slice(0,4)],
         borderRadius: 4,
         borderSkipped: false,
@@ -1264,9 +1264,9 @@ function buildCharts() {
     });
   }
 
-  chartInstances.severity = donut('chartSeverity', ['Medium','Low','High'], [149,60,25], [C.yellow, C.accent, C.red]);
-  chartInstances.applied = donut('chartApplied', ['Applied','Not Applied'], [34,6], [C.accent, C.notApplied]);
-  chartInstances.ratings = donut('chartRatings', ['Upvote','Downvote'], [33,7], [C.accent, C.red]);
+  chartInstances.severity = donut('chartSeverity', ['Medium','Low','High'], [164,78,26], [C.yellow, C.accent, C.red]);
+  chartInstances.applied = donut('chartApplied', ['Applied','Not Applied'], [41,6], [C.accent, C.notApplied]);
+  chartInstances.ratings = donut('chartRatings', ['Upvote','Downvote'], [40,7], [C.accent, C.red]);
 
 }
 
@@ -1274,25 +1274,26 @@ function buildCharts() {
 // Leaderboard (static, uses CSS vars)
 // ==============================
 const leaderboardData = [
-  { name: 'Kunwei Jin', runs: 57 },
-  { name: 'Omkar Joshi', runs: 28 },
+  { name: 'Kunwei Jin', runs: 66 },
+  { name: 'Omkar Joshi', runs: 30 },
   { name: 'Sarika Kandasamy', runs: 21 },
   { name: 'Damla Tufekli', runs: 15 },
   { name: 'Sanika Mokashi', runs: 8 },
   { name: 'Sourabh Daroji', runs: 7 },
+  { name: 'Ritika Dhawan', runs: 6 },
   { name: 'Aryan Rathod', runs: 6 },
-  { name: 'Ritika Dhawan', runs: 5 },
   { name: 'Aravind R', runs: 5 },
+  { name: 'Jerome Marshall', runs: 5 },
+  { name: 'Ahmed Elgamal', runs: 4 },
   { name: 'Rishabh Jain', runs: 3 },
   { name: 'Chinmay Anand', runs: 3 },
-  { name: 'Jerome Marshall', runs: 2 },
+  { name: 'Shivam Roy', runs: 3 },
   { name: 'Mansi Diwakar Salvi', runs: 1 },
   { name: 'Sergej Spomer', runs: 1 },
   { name: 'James Sarantos', runs: 1 },
   { name: 'Mandar Sarnaik', runs: 1 },
   { name: 'Monica Poddar', runs: 1 },
   { name: 'Kushagra Khandelwal', runs: 1 },
-  { name: 'Ahmed Elgamal', runs: 1 },
   { name: 'Arnab Ghose', runs: 1 },
 ];
 
